@@ -11,11 +11,19 @@
 
 unsigned char img[W * H * 3];
 
+vec3 random_in_unit_sphere() {
+	vec3 p;
+	do {
+		p = 2.0*vec3(random_double(), random_double(), random_double()) - vec3(1, 1, 1); //2,2,2立方体
+	} while (p.squared_length() >= 1.0); //取舍，模拟一个BRDF
+	return p;
+}
 
 vec3 color(const ray& r,hitable *world) {
 	hit_record rec;
 	if (world->hit(r, 0.0, FLT_MAX, rec)) {
-		return 0.5*vec3(rec.normal.x() + 1, rec.normal.y() + 1, rec.normal.z() + 1);
+		vec3 target = rec.pos + rec.normal + random_in_unit_sphere();
+		return 0.5*color(ray(rec.pos, target - rec.pos), world);
 	}
 	else {
 		vec3 unit_direction = unit_vector(r.direction());

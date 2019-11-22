@@ -1,53 +1,53 @@
-#include "ray.h"
+#include "sphere.h"
+#include "hitablelist.h"
 #include "svpng.inc"
+#include <float.h>
+#include"camera.h"
+#include "random.h"
+
 
 #define W 200
-#define H 100
+#define H 100  
 
 unsigned char img[W * H * 3];
 
-float hit_sphere(const vec3& center, float radius, const ray& r) {
-	vec3 oc = r.origin() - center;
-	float a = dot(r.direction(), r.direction());
-	float b = 2.0*dot(oc, r.direction());
-	float c = dot(oc, oc) - radius * radius;
-	float discriminant = b * b - 4*a*c;
-	if (discriminant < 0) {
-		return -1.0;
+
+vec3 color(const ray& r,hitable *world) {
+	hit_record rec;
+	if (world->hit(r, 0.0, FLT_MAX, rec)) {
+		return 0.5*vec3(rec.normal.x() + 1, rec.normal.y() + 1, rec.normal.z() + 1);
 	}
 	else {
-		return (-b - sqrt(discriminant)) / (2.0*a);  //解出两个t，较小值为首次相交点
+		vec3 unit_direction = unit_vector(r.direction());
+		float t = 0.5*(unit_direction.y() + 1.0);
+		return (1.0 - t)*vec3(1.0, 1.0, 1.0) + t * vec3(0.5, 0.7, 1.0);
 	}
-}
-
-vec3 color(const ray& r) {
-	float t = hit_sphere(vec3(0, 0, -1), 0.5, r);
-	if (t > 0.0) {
-		vec3 N = unit_vector(r.point_at_parameter(t) - vec3(0, 0, -1)); //交点与圆心形成的单位法线
-		return 0.5*vec3(N.x() + 1, N.y() + 1, N.z() + 1); //  由(-1,1)转化到(0,1)区间
-	}
-	vec3 unit_direction = unit_vector(r.direction());
-	t = 0.5*(unit_direction.y() + 1.0);
-	return (1.0 - t)*vec3(1.0, 1.0, 1.0) + t * vec3(0.5, 0.7, 1.0);
 }
 int main() {
 	int nx = W;
 	int ny = H;
-	vec3 lower_left_corner(-2.0, -1.0, -1.0);
-	vec3 horizontal(4.0, 0.0, 0.0);
-	vec3 vertical(0.0, 2.0, 0.0);
-	vec3 origin(0.0, 0.0, 0.0);
+	int ns = 100;
+	hitable *list[2];
+	list[0] = new sphere(vec3(0, 0, -1), 0.5);
+	list[1] = new sphere(vec3(0, -100.5, -1), 100);
+	hitable *world = new hitable_list(list, 2);
+	camera cam;
 	unsigned char* p = img;
 	for (int j = ny - 1; j >= 0; j--) {
 		for (int i = 0; i < nx; i++, p += 3) {
-			float u = float(i) / float(nx);
-			float v = float(j) / float(ny);
-			ray r(origin, lower_left_corner + u * horizontal + v * vertical);
-			vec3 col = color(r);
+			vec3 col(0, 0, 0);
+			for (int s = 0; s < ns; s++) {
+				float u = float(i + random_double()) / float(nx);
+				float v = float(j + random_double()) / float(ny);
+				ray r = cam.get_ray(u, v);
+				col += color(r,world);
+			}		
+			col /= float(ns);
 			p[0] = int(255.99*col[0]);
 			p[1] = int(255.99*col[1]);
 			p[2] = int(255.99*col[2]);
 		}
 	}
+
 	svpng(fopen("1.png", "wb"), W, H, img, 0);
 }

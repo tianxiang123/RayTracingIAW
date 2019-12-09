@@ -46,7 +46,7 @@ public:
 	virtual bool scatter(const ray& r_in, const hit_record& rec,
 						vec3& attenuation, ray& scattered) const {
 		vec3 target = rec.pos + rec.normal + random_in_unit_sphere();
-		scattered = ray(rec.pos, target - rec.pos);
+		scattered = ray(rec.pos, target - rec.pos, r_in.time());// 加入时间   运动模糊
 		attenuation = albedo;
 		return true;
 	}

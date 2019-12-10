@@ -120,5 +120,5 @@ int main() {
 			p[(ny - 1 - j)* nx * 3 + i * 3 + 2] = int(255.99*col[2]);
 		}
 	}
-	svpng(fopen("motionblur2.png", "wb"), W, H, img, 0);
+	svpng(fopen("bvh.png", "wb"), W, H, img, 0);
 }
